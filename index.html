@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub-Netlify Auto Shortener Dashboard</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: #0f172a; 
+            color: #fff; 
+            padding: 40px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            min-height: 80vh;
+            margin: 0;
+        }
+        .container { 
+            max-width: 500px; 
+            width: 100%; 
+            background: #1e293b; 
+            padding: 30px; 
+            border-radius: 12px; 
+            box-shadow: 0px 10px 25px rgba(0,0,0,0.3); 
+        }
+        h2 { text-align: center; color: #38bdf8; margin-bottom: 20px; }
+        label { font-weight: 600; font-size: 14px; color: #94a3b8; }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 8px 0 20px 0; 
+            border: 1px solid #334155; 
+            background: #0f172a; 
+            color: #fff; 
+            border-radius: 6px; 
+            box-sizing: border-box; 
+        }
+        button { 
+            width: 100%; 
+            padding: 14px; 
+            background: #0284c7; 
+            color: white; 
+            border: none; 
+            font-size: 16px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            border-radius: 6px; 
+            transition: 0.3s; 
+        }
+        button:hover { background: #0369a1; }
+        #loading { display: none; color: #fbbf24; text-align: center; margin-top: 15px; font-weight: bold; }
+        #result { 
+            margin-top: 25px; 
+            padding: 15px; 
+            background: #064e3b; 
+            border: 1px solid #059669; 
+            display: none; 
+            border-radius: 6px; 
+            word-break: break-all; 
+        }
+        .copy-btn { background: #10b981; margin-top: 10px; }
+        .copy-btn:hover { background: #059669; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>🔗 CPA Link Shortener</h2>
+    
+    <label>Target URL (CPA/Offer Link):</label>
+    <input type="text" id="targetUrl" placeholder="https://example.com/offer...">
+
+    <label>Twitter Image URL:</label>
+    <input type="text" id="imageUrl" placeholder="https://i.ibb.co.com/...">
+
+    <button onclick="createShortLink()">Short & Push to Netlify</button>
+
+    <div id="loading">⏳ Processing & Uploading to GitHub... Please wait.</div>
+
+    <div id="result">
+        <p style="margin: 0 0 5px 0; color: #34d399;"><strong>Success! Your Short Link:</strong></p>
+        <span id="shortenedUrl" style="font-weight: bold; font-size: 15px;"></span>
+        <button class="copy-btn" onclick="copyToClipboard()">Copy Link</button>
+    </div>
+</div>
+
+<script>
+    // ======= গিটহাব কনফিগারেশন কনফিগ =======
+    const GH_USERNAME = "mdmohanali361-dev"; 
+    const GH_REPO = "YOUR_REPO_NAME"; // <--- এখানে তোমার GitHub Repository-র নামটা বসাও
+    const GH_TOKEN = "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"; 
+    const NETLIFY_DOMAIN = "https://sweettalks.com"; // <--- তোমার কাস্টম ডোমেইন
+    // =========================================================
+
+    // অটোমেটিক র্যান্ডম কাস্টম ট্যাগ (A-Z, 0-9) জেনারেটর
+    function generateSlug(length = 6) {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+        let result = '';
+        for (let i = 0; i < length; i++) {
+            result += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return result;
+    }
+
+    async function createShortLink() {
+        const targetUrl = document.getElementById('targetUrl').value.trim();
+        const imageUrl = document.getElementById('imageUrl').value.trim();
+        const loadingDiv = document.getElementById('loading');
+        const resultDiv = document.getElementById('result');
+
+        if(!targetUrl || !imageUrl) {
+            alert('Please fill up all fields!');
+            return;
+        }
+
+        loadingDiv.style.display = 'block';
+        resultDiv.style.display = 'none';
+
+        const slug = generateSlug(); // অটো স্ল্যাগ তৈরি হবে
+        const fileName = `${slug}.html`; // ফাইলের নাম হবে যেমন: Ax5T9.html
+
+        // তোমার দেওয়া সেই ম্যাজিক কোড টেমপ্লেট
+        const htmlContent = `<!DOCTYPE html>
+<html>
+<head>
+<style>html, body { display: none !important; background: #ffffff !important; }</style>
+<meta content='summary_large_image' name='twitter:card'/>
+<meta content='16:23' name='twitter:title'/>
+<meta content='Click to watch the full unedited viral video before it gets deleted! 🤐' name='twitter:description'/>
+<meta content='${imageUrl}' name='twitter:image'/>
+<script type='text/javascript'>window.location.replace("${targetUrl}");<\/script>
+</head>
+<body></body>
+</html>`;
+
+        // ফাইলটিকে Base64 ফরম্যাটে কনভার্ট করতে হবে GitHub API-র জন্য
+        const base64Content = btoa(unescape(encodeURIComponent(htmlContent)));
+
+        // GitHub API URL
+        const url = `https://api.github.com/repos/${GH_USERNAME}/${GH_REPO}/contents/${fileName}`;
+
+        try {
+            const response = await fetch(url, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `token ${GH_TOKEN}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: `Created short link for ${slug}`,
+                    content: base64Content
+                })
+            });
+
+            if (response.ok) {
+                // ফাইল আপলোড সফল হলে লিংক জেনারেট হবে
+                const finalShortLink = `${NETLIFY_DOMAIN}/${fileName}`;
+                document.getElementById('shortenedUrl').innerText = finalShortLink;
+                loadingDiv.style.display = 'none';
+                resultDiv.style.display = 'block';
+            } else {
+                const errData = await response.json();
+                alert('GitHub Error: ' + errData.message);
+                loadingDiv.style.display = 'none';
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Something went wrong!');
+            loadingDiv.style.display = 'none';
+        }
+    }
+
+    function copyToClipboard() {
+        const linkText = document.getElementById('shortenedUrl').innerText;
+        navigator.clipboard.writeText(linkText);
+        alert('Link Copied to Clipboard!');
+    }
+</script>
+
+</body>
+</html>
