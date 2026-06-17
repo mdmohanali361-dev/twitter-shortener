@@ -86,11 +86,34 @@
 </div>
 
 <script>
+    // ======= প্যানেল লগইন সিকিউরিটি =======
+const LOGIN_USERNAME = "mdmohanali5475"; // তোমার ইচ্ছা মতো ইউজারনেম দাও
+const LOGIN_PASSWORD = "MTmohan5475@"; // তোমার স্ট্রং পাসওয়ার্ড দাও
+
+function checkLogin() {
+    let sessionUser = sessionStorage.getItem("isLoggedIn");
+    if (sessionUser !== "true") {
+        let user = prompt("ইউজারনেম দিন:");
+        let pass = prompt("পাসওয়ার্ড দিন:");
+        
+        if (user === LOGIN_USERNAME && pass === LOGIN_PASSWORD) {
+            sessionStorage.setItem("isLoggedIn", "true");
+        } else {
+            alert("ভুল ইউজারনেম বা পাসওয়ার্ড! আবার চেষ্টা করুন।");
+            window.location.reload();
+            document.body.innerHTML = "❌ Access Denied.";
+        }
+    }
+}
+// পেজ লোড হওয়ার সাথে সাথে সিকিউরিটি চেক করবে
+checkLogin();
+// ===================================
     // ======= গিটহাব কনফিগারেশন কনফিগ =======
     const GH_USERNAME = "mdmohanali361-dev"; 
     const GH_REPO = "twitter-shortener"; // <--- এখানে তোমার GitHub Repository-র নামটা বসাও
     const GH_TOKEN = "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"; 
-    const NETLIFY_DOMAIN = "https://peppy-platypus-69a5f5.netlify.app"; // <--- তোমার কাস্টম ডোমেইন
+    const NETLIFY_DOMAIN = "https://evonieaev.netlify.app
+"; // <--- তোমার কাস্টম ডোমেইন
     // =========================================================
 
     // অটোমেটিক র্যান্ডম কাস্টম ট্যাগ (A-Z, 0-9) জেনারেটর
